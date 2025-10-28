@@ -30,6 +30,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  // 🟩 Đăng ký
   async register(dto: RegisterDto): Promise<UserResponse> {
     const { name, email, password, role = 'user' } = dto;
 
@@ -38,15 +39,12 @@ export class AuthService {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const userData: Partial<UserDocument> = {
+    const user = await this.userModel.create({
       name,
       email,
       password: hashed,
       role,
-    };
-
-    const user = await this.userModel.create(userData);
-    if (!user) throw new UnauthorizedException('Lỗi tạo user');
+    });
 
     const _id = (user._id as Types.ObjectId).toString();
 
@@ -66,6 +64,7 @@ export class AuthService {
     };
   }
 
+  // 🟩 Đăng nhập
   async login(email: string, password: string): Promise<UserResponse> {
     const user = await this.userModel.findOne({ email });
     if (!user) throw new UnauthorizedException('Sai email hoặc mật khẩu');
@@ -91,7 +90,14 @@ export class AuthService {
     };
   }
 
+  // 🟩 Lấy user theo id (validate token)
   async validateUserById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).select('-password').exec();
+  }
+
+  // 🟩 ADMIN: Lấy toàn bộ user
+  async findAllUsers(): Promise<Partial<User>[]> {
+    const users = await this.userModel.find().select('-password').exec();
+    return users;
   }
 }

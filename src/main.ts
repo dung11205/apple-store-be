@@ -13,7 +13,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  //  Global ValidationPipe với exceptionFactory tùy chỉnh
+  // ✅ Thêm global prefix cho tất cả route API
+  app.setGlobalPrefix('api');
+
+  // Global ValidationPipe với exceptionFactory tùy chỉnh
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -22,7 +25,7 @@ async function bootstrap() {
       exceptionFactory: (errors: ValidationError[]) => {
         console.error('Validation errors:', JSON.stringify(errors, null, 2));
 
-        //  Hàm đệ quy gom tất cả message kể cả nested children
+        // Hàm đệ quy gom tất cả message kể cả nested children
         const extractMessages = (
           validationErrors: ValidationError[],
         ): string[] => {
@@ -35,10 +38,10 @@ async function bootstrap() {
           });
         };
 
-        //  Gộp tất cả message lại
+        // Gộp tất cả message lại
         const errorMessages = extractMessages(errors).join('; ');
 
-        //  Trả về lỗi chi tiết
+        // Trả về lỗi chi tiết
         return new BadRequestException(
           `Dữ liệu không hợp lệ: ${errorMessages}`,
         );
@@ -46,12 +49,12 @@ async function bootstrap() {
     }),
   );
 
-  //  Chạy server
+  // Chạy server
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`App chạy tại http://localhost:${process.env.PORT ?? 3000}`);
+  console.log(`✅ App chạy tại http://localhost:${process.env.PORT ?? 3000}`);
 }
 
-//  Bắt lỗi khởi động
+// Bắt lỗi khởi động
 bootstrap().catch((err) => {
   console.error('Bootstrap failed:', err);
   process.exit(1);
