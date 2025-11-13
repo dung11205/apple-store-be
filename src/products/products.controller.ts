@@ -8,11 +8,14 @@ import {
   UseGuards,
   UploadedFiles,
   UseInterceptors,
+  Delete,
+  Put,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { Product } from './product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -66,5 +69,24 @@ export class ProductsController {
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Product> {
     return this.productsService.findOne(id);
+  }
+
+  // 🟠 Cập nhật sản phẩm (Admin)
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateProductDto,
+  ): Promise<Product> {
+    return this.productsService.update(id, data);
+  }
+
+  // 🗑 Xóa sản phẩm (Admin)
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async remove(@Param('id') id: string) {
+    return this.productsService.delete(id); // trả về { message: 'Product deleted successfully' }
   }
 }

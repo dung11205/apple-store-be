@@ -18,6 +18,9 @@ interface ProductQuery {
 
 @Injectable()
 export class ProductsService {
+  remove() {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @InjectModel(Product.name)
     private readonly productModel: Model<Product>,
