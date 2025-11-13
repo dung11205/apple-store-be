@@ -1,18 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from '../auth.service';
+import { Types } from 'mongoose'; // ✅ Thêm dòng này
 
-// Fix: Define interface cho payload để tránh any (strict type sub, email, role)
+// ✅ Interface cho payload (type-safe)
 interface JwtPayload {
   sub: string; // MongoDB _id
   email: string;
-  role: string; // 'user' | 'admin'
+  role: 'user' | 'admin'; // strict type để RolesGuard hoạt động an toàn
 }
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private authService: AuthService) {
+  constructor(private readonly authService: AuthService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -20,19 +21,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<any> {
-    // Fix: Type payload là JwtPayload, return Promise<any> (chuẩn Passport)
-    // Fix: Giờ payload.sub là string (không any), call an toàn
+  // ✅ Hàm validate được Passport tự gọi sau khi verify token
+  async validate(payload: JwtPayload) {
     const user = await this.authService.validateUserById(payload.sub);
-    if (!user) return null;
 
-    // Fix: Type guard sau if (!user) → user là User (không any), assign an toàn
-    // Return full user info, gắn vào req.user (thêm name nếu schema có)
+    if (!user) {
+      // Nếu user bị xóa hoặc không tồn tại → báo lỗi rõ ràng
+      throw new UnauthorizedException('User not found or inactive');
+    }
+
+    // 🟢 Fix: Ép kiểu an toàn để tránh lỗi ESLint/TypeScript
+    const userId =
+      user._id instanceof Types.ObjectId
+        ? user._id.toString()
+        : String(user._id);
+
+    // ✅ Return object này sẽ được gắn vào req.user
     return {
-      userId: user._id,
+      userId,
       email: user.email,
       role: user.role,
-      name: user.name, // Nếu schema không có name, xóa dòng này
+      name: user.name ?? null, // Nếu schema có name
     };
   }
 }

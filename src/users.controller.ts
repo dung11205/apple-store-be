@@ -53,7 +53,6 @@ export class UsersController {
     return user;
   }
 
-  // 🟥 Xóa user
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   async deleteUser(@Param('id') id: string) {

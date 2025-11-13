@@ -2,21 +2,22 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express'; // ✅ thêm import
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // ✅ ép kiểu app về NestExpressApplication
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Cho phép CORS cho FE (Vite port 5173)
+  // CORS
   app.enableCors({
     origin: 'http://localhost:5173',
     methods: 'GET,POST,PUT,DELETE',
     credentials: true,
   });
 
-  // ✅ Thêm global prefix cho tất cả route API
   app.setGlobalPrefix('api');
 
-  // Global ValidationPipe với exceptionFactory tùy chỉnh
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -25,7 +26,6 @@ async function bootstrap() {
       exceptionFactory: (errors: ValidationError[]) => {
         console.error('Validation errors:', JSON.stringify(errors, null, 2));
 
-        // Hàm đệ quy gom tất cả message kể cả nested children
         const extractMessages = (
           validationErrors: ValidationError[],
         ): string[] => {
@@ -38,10 +38,8 @@ async function bootstrap() {
           });
         };
 
-        // Gộp tất cả message lại
         const errorMessages = extractMessages(errors).join('; ');
 
-        // Trả về lỗi chi tiết
         return new BadRequestException(
           `Dữ liệu không hợp lệ: ${errorMessages}`,
         );
@@ -49,12 +47,15 @@ async function bootstrap() {
     }),
   );
 
-  // Chạy server
+  // ✅ Expose thư mục uploads
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
   await app.listen(process.env.PORT ?? 3000);
   console.log(`✅ App chạy tại http://localhost:${process.env.PORT ?? 3000}`);
 }
 
-// Bắt lỗi khởi động
 bootstrap().catch((err) => {
   console.error('Bootstrap failed:', err);
   process.exit(1);

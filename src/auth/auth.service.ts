@@ -92,7 +92,11 @@ export class AuthService {
 
   // 🟩 Lấy user theo id (validate token)
   async validateUserById(id: string): Promise<UserDocument | null> {
-    return this.userModel.findById(id).select('-password').exec();
+    // ✅ Tránh lỗi “unknown type” khi gọi hàm này
+    if (!Types.ObjectId.isValid(id)) return null;
+
+    const user = await this.userModel.findById(id).select('-password').exec();
+    return user;
   }
 
   // 🟩 ADMIN: Lấy toàn bộ user
