@@ -18,9 +18,6 @@ interface ProductQuery {
 
 @Injectable()
 export class ProductsService {
-  remove() {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     @InjectModel(Product.name)
     private readonly productModel: Model<Product>,
@@ -35,6 +32,7 @@ export class ProductsService {
       price: Number(data.price),
       stock: data.stock ? Number(data.stock) : 0,
       images: data.images || [],
+      order: data.order ?? 0,
     };
 
     const product = new this.productModel(productData);
@@ -47,13 +45,13 @@ export class ProductsService {
   ): Promise<{ data: Product[]; total: number }> {
     const {
       page = 1,
-      limit = 10,
+      limit = 100,
       keyword = '',
       category,
       minPrice,
       maxPrice,
-      sortBy = 'createdAt',
-      order = 'desc',
+      sortBy = 'order',
+      order = 'asc',
     } = query;
 
     const filters: Record<string, any> = {};
@@ -91,7 +89,10 @@ export class ProductsService {
   }
 
   // 🟠 Cập nhật sản phẩm
-  async update(id: string, data: UpdateProductDto): Promise<Product> {
+  async update(
+    id: string,
+    data: UpdateProductDto & { order?: number },
+  ): Promise<Product> {
     const updated = await this.productModel
       .findByIdAndUpdate(id, data, { new: true })
       .exec();
@@ -106,5 +107,13 @@ export class ProductsService {
     if (!deleted)
       throw new NotFoundException(`Product with ID ${id} not found`);
     return { message: 'Product deleted successfully' };
+  }
+
+  // 🔹 Cập nhật thứ tự nhiều sản phẩm (Drag & Drop)
+  async reorderProducts(productIds: string[]): Promise<{ message: string }> {
+    for (let i = 0; i < productIds.length; i++) {
+      await this.update(productIds[i], { order: i });
+    }
+    return { message: 'Sắp xếp sản phẩm thành công' };
   }
 }

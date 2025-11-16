@@ -3,8 +3,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ProductsModule } from './products/products.module';
 import { AuthModule } from './auth/auth.module';
-import { UsersController } from './users.controller';
 import { UsersModule } from './users.module';
+import { OrdersModule } from './orders/orders.module'; // ✅ thêm OrdersModule
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -17,8 +18,9 @@ import { UsersModule } from './users.module';
     }),
     ProductsModule,
     AuthModule,
-    UsersModule, // thêm dòng này
+    UsersModule,
+    OrdersModule, // ✅ cần import module này
   ],
-  controllers: [UsersController],
+  controllers: [],
 })
 export class AppModule {}

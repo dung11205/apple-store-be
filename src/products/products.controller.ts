@@ -10,6 +10,8 @@ import {
   UseInterceptors,
   Delete,
   Put,
+  Headers,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
@@ -64,7 +66,19 @@ export class ProductsController {
   async findAll(@Query() query): Promise<{ data: Product[]; total: number }> {
     return this.productsService.findAll(query);
   }
+  // 🔹 Reorder sản phẩm (Admin)
+  @Put('reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async reorderProducts(@Body() body: { productIds: string[] }) {
+    const { productIds } = body;
 
+    for (let i = 0; i < productIds.length; i++) {
+      await this.productsService.update(productIds[i], { order: i });
+    }
+
+    return { success: true, message: 'Sắp xếp sản phẩm thành công' };
+  }
   // 🔹 Lấy chi tiết sản phẩm
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Product> {
@@ -88,5 +102,25 @@ export class ProductsController {
   @Roles('admin')
   async remove(@Param('id') id: string) {
     return this.productsService.delete(id); // trả về { message: 'Product deleted successfully' }
+  }
+
+  // 🔹 API riêng cho /store
+  @Get('store')
+  async getProductsForStore(@Headers('x-api-key') apiKey: string) {
+    // Kiểm tra api key (bảo mật cho frontend store)
+    if (apiKey !== process.env.STORE_API_KEY) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Lấy tất cả sản phẩm active, không phân trang
+    const { data } = await this.productsService.findAll({
+      page: 1,
+      limit: 1000, // hoặc số lượng tối đa bạn muốn
+    });
+
+    // Bạn có thể lọc chỉ lấy sản phẩm isActive = true
+    const activeProducts = data.filter((p) => p.isActive);
+
+    return activeProducts;
   }
 }

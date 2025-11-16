@@ -20,7 +20,7 @@ export class CreateProductDto {
   @Min(0)
   @Type(() => Number) // ✅ chuyển string -> number
   readonly price: number;
-
+  order?: number;
   @IsOptional()
   @IsString()
   readonly category?: string;

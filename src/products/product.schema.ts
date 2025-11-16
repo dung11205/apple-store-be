@@ -18,13 +18,16 @@ export class Product {
   category: string;
 
   @Prop({ type: [String], default: [] })
-  images: string[]; // lưu URLs
+  images: string[];
 
   @Prop({ default: 0 })
   stock: number;
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ default: 0 })
+  order: number; // thêm
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
