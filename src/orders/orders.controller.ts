@@ -18,13 +18,11 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // khách tạo đơn
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(createOrderDto);
   }
 
-  // admin xem tất cả đơn
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -32,7 +30,6 @@ export class OrdersController {
     return this.ordersService.findAll();
   }
 
-  // admin xem 1 đơn
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -40,7 +37,6 @@ export class OrdersController {
     return this.ordersService.findOne(id);
   }
 
-  // admin cập nhật trạng thái
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -48,7 +44,6 @@ export class OrdersController {
     return this.ordersService.updateStatus(id, status);
   }
 
-  // admin xóa
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -60,5 +55,11 @@ export class OrdersController {
   @Get('user/:phone')
   async findByUser(@Param('phone') phone: string) {
     return this.ordersService.findByUser(phone);
+  }
+
+  // user hủy đơn
+  @Patch('user/:id/cancel')
+  async userCancelOrder(@Param('id') id: string) {
+    return this.ordersService.userCancelOrder(id);
   }
 }

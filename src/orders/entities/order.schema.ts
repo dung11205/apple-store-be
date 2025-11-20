@@ -22,7 +22,7 @@ export class Order {
     quantity: number;
   }>;
 
-  @Prop({ default: 'pending' }) // trạng thái: pending, shipped, completed
+  @Prop({ default: 'pending' }) // trạng thái: pending, shipped, delivered, cancelled
   status: string;
 }
 
