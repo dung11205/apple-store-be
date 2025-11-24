@@ -2,13 +2,12 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from '../auth.service';
-import { Types } from 'mongoose'; // ✅ Thêm dòng này
+import { Types } from 'mongoose';
 
-// ✅ Interface cho payload (type-safe)
 interface JwtPayload {
   sub: string; // MongoDB _id
   email: string;
-  role: 'user' | 'admin'; // strict type để RolesGuard hoạt động an toàn
+  role: 'user' | 'admin';
 }
 
 @Injectable()
@@ -21,27 +20,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  // ✅ Hàm validate được Passport tự gọi sau khi verify token
   async validate(payload: JwtPayload) {
     const user = await this.authService.validateUserById(payload.sub);
 
     if (!user) {
-      // Nếu user bị xóa hoặc không tồn tại → báo lỗi rõ ràng
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    // 🟢 Fix: Ép kiểu an toàn để tránh lỗi ESLint/TypeScript
-    const userId =
+    // Chuyển ObjectId sang string và trả về 'id' để controller đọc req.user.id
+    const id =
       user._id instanceof Types.ObjectId
         ? user._id.toString()
         : String(user._id);
 
-    // ✅ Return object này sẽ được gắn vào req.user
     return {
-      userId,
+      id, // ✅ dùng 'id' thay vì 'userId'
       email: user.email,
       role: user.role,
-      name: user.name ?? null, // Nếu schema có name
+      name: user.name ?? null,
     };
   }
 }

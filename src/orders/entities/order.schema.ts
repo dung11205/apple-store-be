@@ -7,6 +7,8 @@ export type OrderDocument = Order & Document;
 export class Order {
   @Prop({ required: true })
   name: string;
+  @Prop({ required: true })
+  userId: string;
 
   @Prop({ required: true })
   phone: string;

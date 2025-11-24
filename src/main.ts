@@ -53,7 +53,7 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`✅ App chạy tại http://localhost:${process.env.PORT ?? 3000}`);
+  console.log(` App chạy tại http://localhost:${process.env.PORT ?? 3000}`);
 }
 
 bootstrap().catch((err) => {

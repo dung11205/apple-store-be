@@ -19,6 +19,9 @@ export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   phone: string;
+  // thêm giá sản phẩm
+  @IsNumber()
+  price: number;
 
   @IsString()
   @IsNotEmpty()

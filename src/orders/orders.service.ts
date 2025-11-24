@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,13 +12,16 @@ import { CreateOrderDto } from './dto/create-order.dto';
 @Injectable()
 export class OrdersService {
   constructor(
-    @InjectModel(Order.name)
-    private orderModel: Model<OrderDocument>,
+    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
   ) {}
 
-  // Tạo đơn hàng mới (user)
-  async create(createOrderDto: CreateOrderDto): Promise<OrderDocument> {
+  // Tạo đơn mới (user)
+  async create(
+    createOrderDto: CreateOrderDto,
+    userId: string,
+  ): Promise<OrderDocument> {
     const order = new this.orderModel({
+      userId,
       name: createOrderDto.name,
       phone: createOrderDto.phone,
       address: createOrderDto.address,
@@ -26,63 +30,59 @@ export class OrdersService {
           productId: createOrderDto.productId,
           name: createOrderDto.productName,
           quantity: createOrderDto.quantity,
-          price: 0, // có thể cập nhật giá sau
+          price: createOrderDto.price,
         },
       ],
-      status: 'pending', // mặc định trạng thái
+      status: 'pending',
     });
     return order.save();
   }
 
-  // Lấy tất cả đơn (admin)
+  // Lấy đơn của user
+  async findByUser(userId: string): Promise<OrderDocument[]> {
+    return this.orderModel.find({ userId }).sort({ createdAt: -1 }).exec();
+  }
+
+  // User hủy đơn
+  async userCancelOrder(id: string, userId: string): Promise<OrderDocument> {
+    const order = await this.orderModel.findById(id).exec();
+    if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+
+    if (order.userId !== userId)
+      throw new ForbiddenException('Không có quyền hủy đơn này');
+    if (['shipped', 'delivered'].includes(order.status))
+      throw new BadRequestException('Đơn hàng đã được giao, không thể hủy.');
+    if (order.status === 'cancelled')
+      throw new BadRequestException('Đơn hàng đã bị hủy.');
+
+    order.status = 'cancelled';
+    return order.save();
+  }
+
+  // Admin
   async findAll(): Promise<OrderDocument[]> {
     return this.orderModel.find().sort({ createdAt: -1 }).exec();
   }
 
-  // Lấy 1 đơn theo id
   async findOne(id: string): Promise<OrderDocument> {
     const order = await this.orderModel.findById(id).exec();
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }
 
-  // Lấy đơn của 1 user theo số điện thoại
-  async findByUser(phone: string): Promise<OrderDocument[]> {
-    return this.orderModel.find({ phone }).sort({ createdAt: -1 }).exec();
-  }
-
-  // Admin cập nhật trạng thái
   async updateStatus(id: string, status: string): Promise<OrderDocument> {
     const allowedStatuses = ['pending', 'shipped', 'delivered', 'cancelled'];
-    if (!allowedStatuses.includes(status)) {
+    if (!allowedStatuses.includes(status))
       throw new BadRequestException(
-        `Status không hợp lệ. Chỉ chấp nhận: ${allowedStatuses.join(', ')}`,
+        `Status không hợp lệ: ${allowedStatuses.join(', ')}`,
       );
-    }
-
     const order = await this.findOne(id);
     order.status = status;
     return order.save();
   }
 
-  // Admin xóa đơn
   async remove(id: string): Promise<{ deletedCount?: number }> {
-    await this.findOne(id); // kiểm tra tồn tại
+    await this.findOne(id);
     return this.orderModel.deleteOne({ _id: id }).exec();
-  }
-
-  // User hủy đơn
-  async userCancelOrder(id: string): Promise<OrderDocument> {
-    const order = await this.findOne(id);
-
-    if (['shipped', 'delivered'].includes(order.status)) {
-      throw new BadRequestException('Đơn hàng đã được giao, không thể hủy.');
-    }
-    if (order.status === 'cancelled') {
-      throw new BadRequestException('Đơn hàng đã bị hủy.');
-    }
-
-    order.status = 'cancelled';
-    return order.save();
   }
 }
