@@ -6,7 +6,7 @@ import {
   Min,
   IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer'; // ✅ thêm import
+import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
@@ -18,12 +18,14 @@ export class CreateProductDto {
 
   @IsNumber()
   @Min(0)
-  @Type(() => Number) // ✅ chuyển string -> number
+  @Type(() => Number)
   readonly price: number;
+
   order?: number;
-  @IsOptional()
+
+  // ✅ Bắt buộc có category
   @IsString()
-  readonly category?: string;
+  readonly category: string;
 
   @IsOptional()
   @IsArray()
@@ -32,7 +34,7 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Type(() => Number) // ✅ chuyển string -> number
+  @Type(() => Number)
   readonly stock?: number;
 
   @IsOptional()

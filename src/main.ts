@@ -15,9 +15,9 @@ async function bootstrap() {
     methods: 'GET,POST,PUT,DELETE,PATCH',
     credentials: true,
   });
-
+//dksjahdjkashjkdhajkshdjkashdkhajdkja
   app.setGlobalPrefix('api');
-
+//cm
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
