@@ -23,12 +23,19 @@ export class ProductsService {
     private readonly productModel: Model<Product>,
   ) {}
 
-  // 🟢 Tạo mới sản phẩm
+  // 🟢 Tạo mới sản phẩm (fix category slug)
   async create(
     data: CreateProductDto & { images?: string[] },
   ): Promise<Product> {
+    const categorySlug = data.category
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '');
+
     const productData = {
       ...data,
+      category: categorySlug,
       price: Number(data.price),
       stock: data.stock ? Number(data.stock) : 0,
       images: data.images || [],
@@ -39,7 +46,7 @@ export class ProductsService {
     return product.save();
   }
 
-  // 🟡 Lấy danh sách sản phẩm
+  // 🟡 Lấy danh sách sản phẩm (fix lọc category)
   async findAll(
     query: ProductQuery,
   ): Promise<{ data: Product[]; total: number }> {
@@ -55,8 +62,21 @@ export class ProductsService {
     } = query;
 
     const filters: Record<string, any> = {};
+
+    // Tìm tên
     if (keyword) filters.name = { $regex: keyword, $options: 'i' };
-    if (category) filters.category = category;
+
+    // 🔥 FIX CATEGORY FILTER
+    if (category) {
+      const categorySlug = category
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '');
+      filters.category = categorySlug;
+    }
+
+    // Lọc giá
     if (minPrice !== undefined || maxPrice !== undefined) {
       filters.price = {
         ...(minPrice !== undefined ? { $gte: Number(minPrice) } : {}),

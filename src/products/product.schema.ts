@@ -14,7 +14,10 @@ export class Product {
   @Prop({ required: true })
   price: number;
 
-  @Prop()
+  // ✅ category luôn lưu lowercase
+  @Prop({
+    set: (val: string) => val?.toLowerCase().trim(),
+  })
   category: string;
 
   @Prop({ type: [String], default: [] })
@@ -24,10 +27,10 @@ export class Product {
   stock: number;
 
   @Prop({ default: true })
-  isActive: boolean;
+  isActive: boolean; // mặc định true
 
   @Prop({ default: 0 })
-  order: number; // thêm
+  order: number; // thứ tự hiển thị
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
